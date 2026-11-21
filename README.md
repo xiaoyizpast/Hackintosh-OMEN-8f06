@@ -18,6 +18,21 @@
 > ⛔ **CPU 功耗墙与频率上限在 macOS 下不可调整**：[说明](PITFALLS-2.md#0-cpu-功耗与频率限制不可调整)
 
 
+
+## 扬声器 EQ（BlackHole + CamillaDSP）
+
+Windows 下扬声器由 Realtek APO + DTS:X Ultra 调音；macOS 只有基础输出。仓库提供免费系统级 EQ：
+
+```
+App → BlackHole 2ch → CamillaDSP（10 段）→ Realtek ALC245
+```
+
+```bash
+sudo bash audio/install.sh
+```
+
+详见 [audio/README.md](audio/README.md)。DTS GPEQ 为私有编码，曲线为近似值。
+
 ## Zfan：风扇控制（已支持）
 
 本仓库配套 **Zfan** —— macOS 下的风扇手动控制 App，通过 EC 直接控制两个风扇：

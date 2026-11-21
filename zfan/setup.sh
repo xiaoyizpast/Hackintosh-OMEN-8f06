@@ -96,6 +96,13 @@ launchctl bootout gui/$(id -u) "$AG" 2>/dev/null || true
 launchctl bootstrap gui/$(id -u) "$AG" 2>/dev/null || true
 ok "LaunchAgent 已安装"
 
+# 开机守护（登录前接管）
+install -m 755 "$HERE/boot/zfan-boot.sh" /usr/local/bin/zfan-boot.sh || die "安装 zfan-boot.sh 失败"
+install -m 644 "$HERE/boot/com.local.zfanboot.plist" /Library/LaunchDaemons/com.local.zfanboot.plist
+launchctl bootout system/com.local.zfanboot 2>/dev/null || true
+launchctl bootstrap system /Library/LaunchDaemons/com.local.zfanboot.plist 2>/dev/null || true
+ok "开机守护已安装"
+
 # 校验
 if sysctl kern.ecfan >/dev/null 2>&1; then
   ok "kern.ecfan 可用：$(sysctl -n kern.ecfan)"

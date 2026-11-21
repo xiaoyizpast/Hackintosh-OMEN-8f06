@@ -1,0 +1,92 @@
+devices:
+  samplerate: 48000
+  chunksize: 1024
+  capture:
+    type: CoreAudio
+    device: "BlackHole 2ch"
+    channels: 2
+  playback:
+    type: CoreAudio
+    device: "Realtek ALC245 (Analog)"
+    channels: 2
+
+filters:
+  preamp:
+    type: Gain
+    parameters:
+      gain: -6
+  band0:
+    type: Biquad
+    parameters:
+      type: Peaking
+      freq: 32
+      gain: 11
+      q: 1.0
+  band1:
+    type: Biquad
+    parameters:
+      type: Peaking
+      freq: 64
+      gain: 8.5
+      q: 1.0
+  band2:
+    type: Biquad
+    parameters:
+      type: Peaking
+      freq: 125
+      gain: 7
+      q: 1.0
+  band3:
+    type: Biquad
+    parameters:
+      type: Peaking
+      freq: 250
+      gain: 5
+      q: 1.0
+  band4:
+    type: Biquad
+    parameters:
+      type: Peaking
+      freq: 500
+      gain: 2.5
+      q: 1.0
+  band5:
+    type: Biquad
+    parameters:
+      type: Peaking
+      freq: 1000
+      gain: 0
+      q: 1.0
+  band6:
+    type: Biquad
+    parameters:
+      type: Peaking
+      freq: 2000
+      gain: -2.5
+      q: 1.0
+  band7:
+    type: Biquad
+    parameters:
+      type: Peaking
+      freq: 4000
+      gain: -5
+      q: 1.0
+  band8:
+    type: Biquad
+    parameters:
+      type: Peaking
+      freq: 8000
+      gain: -7
+      q: 1.0
+  band9:
+    type: Biquad
+    parameters:
+      type: Peaking
+      freq: 16000
+      gain: -8.5
+      q: 1.0
+
+pipeline:
+  - type: Filter
+    channels: [0, 1]
+    names: [preamp, band0, band1, band2, band3, band4, band5, band6, band7, band8, band9]

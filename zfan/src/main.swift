@@ -184,7 +184,9 @@ func applyEPPPreset(_ p: Int) -> Bool {
 func setCPBDisabled(_ off: Bool) -> Bool { eppCall(12, off ? 0 : 1) == KERN_SUCCESS }
 
 func setFan(_ v: String) -> Bool {
-    v.withCString { p in
+    var v = v
+    if let n = Int(v) { v = String(min(n, 90)) }
+    return v.withCString { p in
         sysctlbyname("kern.ecfan_set", nil, nil, UnsafeMutableRawPointer(mutating: p), strlen(p)) == 0
     }
 }
@@ -472,6 +474,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, CurveDelegate {
     var statusItem: NSStatusItem?
     var appearanceMode: String = "system"
     var appearanceSegment: NSSegmentedControl!
+    var presetButtons: [String: NSButton] = [:]
 
     func applicationDidFinishLaunching(_ n: Notification) {
         NSSetUncaughtExceptionHandler { ex in
@@ -511,6 +514,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, CurveDelegate {
             pageOrder = saved
         }
         buildOverview(); buildPerformance(); buildFan(); buildSettings()
+        loadSettings()
+        applySavedState()
+        writeBootState()
         setupStatusItem()
         showPage(0); applyAppearance()
 
@@ -525,10 +531,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, CurveDelegate {
             return e
         }
         timer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { _ in self.tick() }
+        NSWorkspace.shared.notificationCenter.addObserver(forName: NSWorkspace.willSleepNotification, object: nil, queue: .main) { [weak self] _ in
+            _ = self?.setFanSafe("auto")
+            debugLog("sleep: fan -> auto")
+        }
+        NSWorkspace.shared.notificationCenter.addObserver(forName: NSWorkspace.didWakeNotification, object: nil, queue: .main) { [weak self] _ in
+            self?.applySavedState()
+            debugLog("wake: saved state re-applied")
+        }
         tick()
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
+
+    func setFanSafe(_ v: String) -> Bool { setFan(v) }
 
     func loadSettings() {
         let d = UserDefaults.standard
@@ -541,7 +557,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate, CurveDelegate {
             curveView.points = pts.map { CGPoint(x: $0[0], y: $0[1]) }
             curveView.needsDisplay = true
         }
+        if let fp = d.string(forKey: "fanPreset") {
+            for (id, b) in presetButtons { b.bezelColor = (id == fp) ? .controlAccentColor : nil }
+        }
         debugLog("settings loaded: epp=\(p) cpb=\(cpbToggle.state == .on) battery=\(batteryToggle.state == .on) curve=\(curveToggle.state == .on)")
+    }
+
+    func writeBootState() {
+        let d = UserDefaults.standard
+        var dict: [String: Any] = [
+            "fanPreset": d.string(forKey: "fanPreset") ?? "auto",
+            "curveOn": d.bool(forKey: "curveOn"),
+            "eppPreset": d.integer(forKey: "eppPreset"),
+            "cpbOff": d.bool(forKey: "cpbOff"),
+            "batteryAuto": d.bool(forKey: "batteryAuto"),
+            "updated": Date().timeIntervalSince1970
+        ]
+        if let pts = d.array(forKey: "curve") as? [[Double]], pts.count == 4 {
+            for i in 0..<4 { dict["curve\(i)x"] = pts[i][0]; dict["curve\(i)y"] = pts[i][1] }
+        }
+        (dict as NSDictionary).write(toFile: "/Users/Shared/zfan-state.plist", atomically: true)
     }
 
     func applySavedState() {
@@ -700,6 +735,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, CurveDelegate {
         var x: CGFloat = 24
         for (t, id) in presets {
             let b = NSButton(title: t, target: self, action: #selector(fanPreset(_:)))
+            presetButtons[id] = b
             b.identifier = NSUserInterfaceItemIdentifier(id); b.bezelStyle = .rounded
             b.frame = NSRect(x: x, y: 520, width: 110, height: 32); v.addSubview(b); x += 120
         }
@@ -787,28 +823,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate, CurveDelegate {
         curveToggle.state = .off
         if id == "auto" { _ = setFan("auto") } else { _ = setFan(id); lastApplied = Int(id) ?? 0 }
         UserDefaults.standard.set(id, forKey: "fanPreset")
+        writeBootState()
         debugLog("fan preset \(id)")
     }
 
     @objc func curveToggled() {
         UserDefaults.standard.set(curveToggle.state == .on, forKey: "curveOn")
+        writeBootState()
         if curveToggle.state == .off { _ = setFan("auto") }
         tick()
     }
 
     func curveChanged() {
         UserDefaults.standard.set(curveView.points.map { [Double($0.x), Double($0.y)] }, forKey: "curve")
+        writeBootState()
     }
 
     func curveValue(for temp: Int) -> Int {
         let pts = curveView.points.sorted { $0.x < $1.x }
         if temp <= Int(pts.first!.x) { return max(30, Int(pts.first!.y)) }
-        if temp >= Int(pts.last!.x) { return min(100, Int(pts.last!.y)) }
+        if temp >= Int(pts.last!.x) { return min(90, Int(pts.last!.y)) }
         for i in 0..<(pts.count - 1) {
             let a = pts[i], b = pts[i + 1]
             if CGFloat(temp) >= a.x && CGFloat(temp) <= b.x {
                 let t = (CGFloat(temp) - a.x) / (b.x - a.x)
-                return max(30, min(100, Int(a.y + (b.y - a.y) * t)))
+                return max(30, min(90, Int(a.y + (b.y - a.y) * t)))
             }
         }
         return 50
@@ -817,15 +856,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, CurveDelegate {
     @objc func eppChanged() {
         _ = applyEPPPreset(eppPopup.indexOfSelectedItem)
         UserDefaults.standard.set(eppPopup.indexOfSelectedItem, forKey: "eppPreset")
+        writeBootState()
         debugLog("epp preset \(eppPopup.indexOfSelectedItem)")
     }
     @objc func cpbChanged() {
         _ = setCPBDisabled(cpbToggle.state == .on)
         UserDefaults.standard.set(cpbToggle.state == .on, forKey: "cpbOff")
+        writeBootState()
         debugLog("cpb off=\(cpbToggle.state == .on)")
     }
     @objc func batteryChanged() {
         UserDefaults.standard.set(batteryToggle.state == .on, forKey: "batteryAuto")
+        writeBootState()
     }
 
     @objc func debugChanged() {

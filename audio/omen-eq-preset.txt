@@ -1,0 +1,23 @@
+# OMEN 16 (8F06) / ALC245 近似预设
+# 依据：Windows DTS:X Ultra Music + Realtek Gen5 的可读参数
+# 100 Hz 2 阶高通、TBHDX 低频增强、MBHL 低频压缩
+# 没有 REW 测量，属于近似，不是精确复刻
+
+Preamp: -4 dB
+
+Band 1:  31 Hz   -6.0 dB  Q 0.7
+Band 2:  62 Hz   -4.0 dB  Q 0.7
+Band 3: 125 Hz   +1.5 dB  Q 1.0
+Band 4: 250 Hz   +2.0 dB  Q 1.0
+Band 5: 500 Hz    0.0 dB  Q 1.0
+Band 6:   1 kHz   0.0 dB  Q 1.0
+Band 7:   2 kHz  +1.0 dB  Q 1.0
+Band 8:   4 kHz  +2.0 dB  Q 1.0
+Band 9:   8 kHz  +1.0 dB  Q 1.0
+Band 10: 16 kHz   0.0 dB  Q 0.7
+
+# 说明
+# - 低频不要抬 100 Hz 以下：Windows 本身有 100 Hz 高通
+# - 125/250 Hz 抬一点，补 Windows 的中低频厚度
+# - 4 kHz 轻微提升，补人声/镲片
+# - Preamp -4 dB，给提升和限幅留余量

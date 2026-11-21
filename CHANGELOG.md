@@ -1,3 +1,9 @@
+## 2026-11-22
+
+- audio: 新增 BlackHole + CamillaDSP 系统级 EQ（Small Speakers 曲线，近似 DTS/Realtek 调音）
+- audio: 新增安装/卸载脚本、LaunchAgent、默认输出切换
+- zfan: 2.3.1 修复冷启动配置恢复、LaunchAgent 路径、开机守护、风扇 5000 RPM 上限、睡眠切 auto
+
 # 更新日志
 
 ## v1.2.6（2026-11-11）

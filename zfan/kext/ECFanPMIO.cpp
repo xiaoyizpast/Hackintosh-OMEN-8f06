@@ -255,6 +255,8 @@ static int ecfan_set SYSCTL_HANDLER_ARGS
     if (pct > 100) pct = 100;
     UInt8 krpm = (UInt8)((pct * 55) / 100);
     if (krpm < 16) krpm = 16;
+    /* hard ceiling: never ask the EC for more than 5000 RPM (55 = 5500) */
+    if (krpm > 50) krpm = 50;
 
     /* 只在尚未进入手动模式时才切换，避免反复写 0x62 把 EC 状态切乱 */
     if ((ctrl & 0x01) == 0) {

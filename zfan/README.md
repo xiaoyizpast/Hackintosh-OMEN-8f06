@@ -2,7 +2,7 @@
 
 [English](README.en.md)
 
-**风扇控制已支持。** Zfan 是本仓库配套的 macOS 风扇/性能控制 App，通过 EC（PMIO）直接控制这把机器的两个风扇。
+**风扇控制已支持（2.3.1）。** Zfan 是本仓库配套的 macOS 风扇/性能控制 App，通过 EC（PMIO）直接控制这把机器的两个风扇。
 
 | 项目 | 说明 |
 |---|---|
@@ -12,6 +12,14 @@
 | 转速/温度 | EC `0xB0–0xB3` / `0x57` / `0xB7` |
 | CPU 功耗/频率 | RAPL / APERF-MPERF（只读） |
 | 作者 | xiaoyizpast · MIT |
+
+## 2.3.1 更新
+
+- 启动时恢复上次保存的 EPP / CPB / 电池策略 / 风扇预设 / 曲线
+- 修复 LaunchAgent 路径（`Fan Control.app` → `Zfan.app`）
+- 新增开机守护：登录前按 `/Users/Shared/zfan-state.plist` 接管
+- 风扇请求硬上限：App 90%，kext 5000 RPM，避免 6000+ 过冲
+- 睡眠自动切 `auto`，唤醒恢复配置
 
 ## 功能
 
